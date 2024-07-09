@@ -59,10 +59,9 @@ const Canvas: React.FC<Props> = ({
   const imageRef = useRef<HTMLImageElement>(null);
   const { docX, docY } = useMouse(canvasRef);
 
-  const iconRef = useRef<HTMLImageElement | null>(null);
   const lastPositionRef = useRef<RelativePoint | null>(null);
   const animationFrameId = useRef<number | null>(null);
-
+  
   const okIconRef = useRef<HTMLImageElement | null>(null);
   const ngIconRef = useRef<HTMLImageElement | null>(null);
   const starIconRef = useRef<HTMLImageElement | null>(null);
@@ -217,34 +216,20 @@ const Canvas: React.FC<Props> = ({
   }, []);
 
   useEffect(() => {
-    const img = new Image();
-    img.src = OkImage.src;
-    img.onload = () => {
-      iconRef.current = img;
-    };
-  }, []);
-
-  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const controller = new AbortController();
-    const resizeCanvas = () => {
-      const { innerWidth, innerHeight } = window;
-      canvas.width = innerWidth;
-      canvas.height = innerHeight;
-      setCanvasSize({ width: innerWidth, height: innerHeight });
-    };
 
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas, {
+    updateCanvasSize();
+    window.addEventListener("resize", updateCanvasSize, {
       signal: controller.signal,
     });
 
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [updateCanvasSize]);
 
   useEffect(() => {
     redrawIcons();
