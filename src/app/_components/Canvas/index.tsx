@@ -4,6 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import NextImage from "next/image";
 import { useMouse } from "react-use";
 
+import CatImage from "../../../../public/images/cat.png";
+import OkImage from "../../../../public/images/ok.png";
+
 type RelativePoint = {
   x: number; // 0 to 1
   y: number; // 0 to 1
@@ -128,7 +131,7 @@ const Canvas: React.FC<CanvasProps> = ({
 
   useEffect(() => {
     const img = new Image();
-    img.src = "/images/ok.png";
+    img.src = OkImage.src;
     img.onload = () => {
       iconRef.current = img;
     };
@@ -269,12 +272,7 @@ const Canvas: React.FC<CanvasProps> = ({
         <p>Touched element ID: {touchedElementId || "None"}</p>
         <p>Initial touched element ID: {initialTouchedElementId || "None"}</p>
         <div className="flex flex-col items-center w-full h-full">
-          <NextImage
-            src="/images/cat.png"
-            alt=""
-            fill
-            className="object-cover"
-          />
+          <NextImage src={CatImage} alt="" fill className="object-cover" />
           <canvas
             ref={canvasRef}
             className="absolute w-full h-full z-10 cursor-pointer touch-none"
