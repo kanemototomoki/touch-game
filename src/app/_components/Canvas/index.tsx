@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import NextImage from "next/image";
 import { useMouse } from "react-use";
-import Head from "next/head";
 
 type RelativePoint = {
   x: number; // 0 to 1
@@ -215,7 +214,16 @@ const Canvas: React.FC<CanvasProps> = ({
         lastPositionRef.current = relativePoint;
       }
     },
-    [isDrawing, getRelativeCoordinates, canvasSize.width, canvasSize.height, centerElements, isInsideCenterElement, initialTouchedElementId, drawIcon]
+    [
+      isDrawing,
+      getRelativeCoordinates,
+      canvasSize.width,
+      canvasSize.height,
+      centerElements,
+      isInsideCenterElement,
+      initialTouchedElementId,
+      drawIcon,
+    ]
   );
 
   const endDrawing = () => {
@@ -251,21 +259,8 @@ const Canvas: React.FC<CanvasProps> = ({
     [draw, isDrawing]
   );
 
-  useEffect(() => {
-    document.body.style.touchAction = "none";
-    return () => {
-      document.body.style.touchAction = "";
-    };
-  }, []);
-
   return (
     <>
-      <Head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-        />
-      </Head>
       <div className="fixed inset-0 overflow-hidden touch-none">
         <p>{isDrawing ? "Drawing" : "Not drawing"}</p>
         <p>
