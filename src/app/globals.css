@@ -2,3 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --screen-mobile: 835px
+}
