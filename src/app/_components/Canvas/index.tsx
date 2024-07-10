@@ -2,13 +2,13 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, use } from "react";
 import NextImage from "next/image";
-import { useMouse, useScratch } from "react-use";
+import { useHover, useHoverDirty, useMouse, useScratch } from "react-use";
 
 import { Debug } from "../Debug";
 import { cn } from "../../_utils";
 
 import CatImage from "../../../../public/images/cat.png";
-import SafeZoneIcon from "../../../../public/images/ok.png";
+import SafeZoneIcon from "../../../../public/images/hand.svg";
 import dangerZoneIcon from "../../../../public/images/ng.svg";
 import TraceIcon from "../../../../public/images/star.svg";
 
@@ -58,6 +58,7 @@ const Canvas: React.FC<Props> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const { docX, docY } = useMouse(canvasRef);
+  const isHover = useHoverDirty(canvasRef);
 
   const lastPositionRef = useRef<RelativePoint | null>(null);
 
@@ -144,7 +145,7 @@ const Canvas: React.FC<Props> = ({
           ? dangerZoneIconRef.current
           : traceIconRef.current;
       if (ctx && icon) {
-        const iconSize = iconType === "trace" ? 30 : 40; // OKとNGアイコンを大きくする
+        const iconSize = iconType === "trace" ? 30 : 40;
         const x = relativeX * canvasSize.width;
         const y = relativeY * canvasSize.height;
         ctx.drawImage(
@@ -176,7 +177,8 @@ const Canvas: React.FC<Props> = ({
       drawIcon(x, y, type, false);
     });
 
-    if (isDrawing && cursorPosition) {
+    // 描画中のアイコン表示
+    if (cursorPosition && isDrawing) {
       drawIcon(
         cursorPosition.x,
         cursorPosition.y,
@@ -184,13 +186,19 @@ const Canvas: React.FC<Props> = ({
         false
       );
     }
+
+    // ホバー時のアイコン表示（常に表示）
+    if (cursorPosition && !isDrawing) {
+      drawIcon(cursorPosition.x, cursorPosition.y, "safe", false);
+    }
   }, [
-    drawIcon,
-    drawnIcons,
-    canvasSize,
+    canvasSize.width,
+    canvasSize.height,
     drawCenterElements,
-    isDrawing,
+    drawnIcons,
     cursorPosition,
+    drawIcon,
+    isDrawing,
     isInSafeZone,
   ]);
 
@@ -323,34 +331,75 @@ const Canvas: React.FC<Props> = ({
   const endDrawing = () => {
     setTouchedElementId(null);
     lastPositionRef.current = null;
-    setCursorPosition(null);
   };
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!isDrawing) return;
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        draw(x, y);
+        const relativePoint = getRelativeCoordinates(x, y);
+        setCursorPosition(relativePoint);
+        const inSafeZone = checkSafeZone(x, y);
+        setIsInSafeZone(inSafeZone);
+
+        if (isDrawing) {
+          draw(x, y);
+          if (inSafeZone) {
+            const touchedId =
+              centerElements.find((_, i) => isInsideCenterElement(x, y, i))
+                ?.id || null;
+            setTouchedElementId(touchedId);
+          } else {
+            setTouchedElementId(null);
+          }
+        }
       }
     },
-    [draw, isDrawing]
+    [
+      draw,
+      isDrawing,
+      getRelativeCoordinates,
+      checkSafeZone,
+      centerElements,
+      isInsideCenterElement,
+    ]
   );
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent<HTMLCanvasElement>) => {
-      if (!isDrawing) return;
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) {
         const touch = e.touches[0];
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
-        draw(x, y);
+        const relativePoint = getRelativeCoordinates(x, y);
+        setCursorPosition(relativePoint);
+        const inSafeZone = checkSafeZone(x, y);
+        setIsInSafeZone(inSafeZone);
+
+        if (isDrawing) {
+          draw(x, y);
+          if (inSafeZone) {
+            const touchedId =
+              centerElements.find((_, i) => isInsideCenterElement(x, y, i))
+                ?.id || null;
+            setTouchedElementId(touchedId);
+          } else {
+            setTouchedElementId(null);
+          }
+        }
       }
     },
-    [draw, isDrawing]
+    [
+      draw,
+      isDrawing,
+      getRelativeCoordinates,
+      checkSafeZone,
+      centerElements,
+      isInsideCenterElement,
+    ]
   );
 
   useEffect(() => {
@@ -383,10 +432,7 @@ const Canvas: React.FC<Props> = ({
               ref={canvasRef}
               className={cn(
                 "z-10 cursor-pointer touch-none",
-                "row-start-1 col-start-1",
-                {
-                  "cursor-none": isDrawing,
-                }
+                "row-start-1 col-start-1 cursor-none"
               )}
               onMouseDown={(e) =>
                 startDrawing(e.nativeEvent.offsetX, e.nativeEvent.offsetY)
