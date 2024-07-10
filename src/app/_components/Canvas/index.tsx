@@ -8,16 +8,16 @@ import { Debug } from "../Debug";
 import { cn } from "../../_utils";
 
 import CatImage from "../../../../public/images/cat.png";
-import OkImage from "../../../../public/images/ok.png";
-import NgImage from "../../../../public/images/ng.svg";
-import StarImage from "../../../../public/images/star.svg";
+import SafeZoneIcon from "../../../../public/images/ok.png";
+import dangerZoneIcon from "../../../../public/images/ng.svg";
+import TraceIcon from "../../../../public/images/star.svg";
 
 type RelativePoint = {
   x: number; // 0 to 1
   y: number; // 0 to 1
 };
 
-type IconType = "ok" | "ng" | "star";
+type IconType = "safe" | "danger" | "trace";
 
 type DrawnIcon = RelativePoint & {
   type: IconType;
@@ -60,11 +60,10 @@ const Canvas: React.FC<Props> = ({
   const { docX, docY } = useMouse(canvasRef);
 
   const lastPositionRef = useRef<RelativePoint | null>(null);
-  const animationFrameId = useRef<number | null>(null);
-  
-  const okIconRef = useRef<HTMLImageElement | null>(null);
-  const ngIconRef = useRef<HTMLImageElement | null>(null);
-  const starIconRef = useRef<HTMLImageElement | null>(null);
+
+  const safeZoneIconRef = useRef<HTMLImageElement | null>(null);
+  const dangerZoneIconRef = useRef<HTMLImageElement | null>(null);
+  const traceIconRef = useRef<HTMLImageElement | null>(null);
 
   const getCenterCoordinates = useCallback(
     () => ({
@@ -139,13 +138,13 @@ const Canvas: React.FC<Props> = ({
     ) => {
       const ctx = getContext();
       const icon =
-        iconType === "ok"
-          ? okIconRef.current
-          : iconType === "ng"
-          ? ngIconRef.current
-          : starIconRef.current;
+        iconType === "safe"
+          ? safeZoneIconRef.current
+          : iconType === "danger"
+          ? dangerZoneIconRef.current
+          : traceIconRef.current;
       if (ctx && icon) {
-        const iconSize = iconType === "star" ? 20 : 40; // OKとNGアイコンを大きくする
+        const iconSize = iconType === "trace" ? 30 : 40; // OKとNGアイコンを大きくする
         const x = relativeX * canvasSize.width;
         const y = relativeY * canvasSize.height;
         ctx.drawImage(
@@ -155,7 +154,7 @@ const Canvas: React.FC<Props> = ({
           iconSize,
           iconSize
         );
-        if (addToState && iconType === "star") {
+        if (addToState && iconType === "trace") {
           setDrawnIcons((prev) => [
             ...prev,
             { x: relativeX, y: relativeY, type: iconType },
@@ -181,7 +180,7 @@ const Canvas: React.FC<Props> = ({
       drawIcon(
         cursorPosition.x,
         cursorPosition.y,
-        isInSafeZone ? "ok" : "ng",
+        isInSafeZone ? "safe" : "danger",
         false
       );
     }
@@ -205,13 +204,13 @@ const Canvas: React.FC<Props> = ({
     };
 
     Promise.all([
-      loadImage(OkImage.src),
-      loadImage(NgImage.src),
-      loadImage(StarImage.src),
+      loadImage(SafeZoneIcon.src),
+      loadImage(dangerZoneIcon.src),
+      loadImage(TraceIcon.src),
     ]).then(([okImg, ngImg, starImg]) => {
-      okIconRef.current = okImg;
-      ngIconRef.current = ngImg;
-      starIconRef.current = starImg;
+      safeZoneIconRef.current = okImg;
+      dangerZoneIconRef.current = ngImg;
+      traceIconRef.current = starImg;
     });
   }, []);
 
@@ -292,7 +291,7 @@ const Canvas: React.FC<Props> = ({
       );
 
       if (distance >= minDrawDistance && inSafeZone) {
-        drawIcon(relativePoint.x, relativePoint.y, "star");
+        drawIcon(relativePoint.x, relativePoint.y, "trace");
         lastPositionRef.current = relativePoint;
       }
 
